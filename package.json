@@ -1,0 +1,19 @@
+{
+  "name": "confluence-mcp-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "mcp-server.js",
+  "scripts": {
+    "start": "node mcp-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["mcp", "confluence", "model-context-protocol"],
+  "author": "",
+  "license": "ISC",
+  "description": "MCP server for Confluence search and management",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2"
+  }
+}
