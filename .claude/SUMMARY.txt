@@ -1,0 +1,6 @@
+```json
+{
+  "user_summary": "Create PR for Claude Code skill improvements",
+  "agent_summary": "Fixed Confluence MCP server, updated PR skill docs"
+}
+```

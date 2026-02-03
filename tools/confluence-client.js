@@ -4,6 +4,9 @@
  */
 
 import fetch from 'node-fetch';
+import FormData from 'form-data';
+import { createReadStream } from 'fs';
+import { readFile } from 'fs/promises';
 
 export class ConfluenceClient {
   constructor(baseUrl, email, apiToken) {
@@ -484,6 +487,76 @@ export class ConfluenceClient {
       id: data.id,
       title: data.title,
       status: data.status,
+      success: true
+    };
+  }
+
+  /**
+   * Upload an attachment to a page
+   *
+   * @param {string} pageId - The page ID to attach to
+   * @param {string} filePath - Absolute path to the file to upload
+   * @param {string} comment - Optional comment for the attachment
+   * @param {boolean} dryRun - Preview without uploading
+   */
+  async uploadAttachment(pageId, filePath, comment = '', dryRun = false) {
+    if (dryRun) {
+      return {
+        dryRun: true,
+        action: 'uploadAttachment',
+        pageId,
+        filePath,
+        comment
+      };
+    }
+
+    // Read file to get its content
+    const fileBuffer = await readFile(filePath);
+    const fileName = filePath.split('/').pop();
+
+    // Create form data
+    const form = new FormData();
+    form.append('file', fileBuffer, {
+      filename: fileName,
+      contentType: 'application/octet-stream'
+    });
+
+    if (comment) {
+      form.append('comment', comment);
+    }
+
+    // Upload attachment
+    const url = `${this.baseUrl}/wiki/rest/api/content/${pageId}/child/attachment`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': this.authHeader,
+        'X-Atlassian-Token': 'no-check',
+        ...form.getHeaders()
+      },
+      body: form
+    });
+
+    // Handle response
+    const text = await response.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch (e) {
+      data = { raw: text };
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        `Confluence API error (${response.status}): ${data.message || response.statusText}`
+      );
+    }
+
+    return {
+      id: data.results?.[0]?.id,
+      title: data.results?.[0]?.title,
+      downloadUrl: data.results?.[0]?._links?.download,
       success: true
     };
   }

@@ -381,6 +381,34 @@ const TOOLS = [
         },
         required: ['pageId']
       }
+    },
+    {
+      name: 'confluence_upload_attachment',
+      description: 'Upload a file attachment to a Confluence page',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          pageId: {
+            type: 'string',
+            description: 'Page ID to attach the file to'
+          },
+          filePath: {
+            type: 'string',
+            description: 'Absolute path to the file to upload'
+          },
+          comment: {
+            type: 'string',
+            description: 'Optional comment for the attachment',
+            default: ''
+          },
+          dryRun: {
+            type: 'boolean',
+            description: 'Preview changes without uploading (default: false)',
+            default: false
+          }
+        },
+        required: ['pageId', 'filePath']
+      }
     }
   ] : []),
 
@@ -523,6 +551,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('Write operations are disabled. Set CONFLUENCE_WRITE_ENABLED=true to enable.');
         }
         result = await confluenceClient.archivePage(args.pageId, args.dryRun);
+        break;
+
+      case 'confluence_upload_attachment':
+        if (!CONFIG.writeEnabled) {
+          throw new Error('Write operations are disabled. Set CONFLUENCE_WRITE_ENABLED=true to enable.');
+        }
+        result = await confluenceClient.uploadAttachment(
+          args.pageId,
+          args.filePath,
+          args.comment,
+          args.dryRun
+        );
         break;
 
       // Best Practices
