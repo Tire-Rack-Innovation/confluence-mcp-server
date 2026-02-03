@@ -409,6 +409,34 @@ const TOOLS = [
         },
         required: ['pageId', 'filePath']
       }
+    },
+    {
+      name: 'confluence_update_attachment',
+      description: 'Update or upload an attachment (replaces existing file with same name if found)',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          pageId: {
+            type: 'string',
+            description: 'Page ID to attach the file to'
+          },
+          filePath: {
+            type: 'string',
+            description: 'Absolute path to the file to upload'
+          },
+          comment: {
+            type: 'string',
+            description: 'Optional comment for the attachment',
+            default: ''
+          },
+          dryRun: {
+            type: 'boolean',
+            description: 'Preview changes without uploading (default: false)',
+            default: false
+          }
+        },
+        required: ['pageId', 'filePath']
+      }
     }
   ] : []),
 
@@ -558,6 +586,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           throw new Error('Write operations are disabled. Set CONFLUENCE_WRITE_ENABLED=true to enable.');
         }
         result = await confluenceClient.uploadAttachment(
+          args.pageId,
+          args.filePath,
+          args.comment,
+          args.dryRun
+        );
+        break;
+
+      case 'confluence_update_attachment':
+        if (!CONFIG.writeEnabled) {
+          throw new Error('Write operations are disabled. Set CONFLUENCE_WRITE_ENABLED=true to enable.');
+        }
+        result = await confluenceClient.updateOrUploadAttachment(
           args.pageId,
           args.filePath,
           args.comment,

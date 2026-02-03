@@ -492,6 +492,35 @@ export class ConfluenceClient {
   }
 
   /**
+   * Get attachments for a page
+   *
+   * @param {string} pageId - The page ID
+   */
+  async getAttachments(pageId) {
+    const data = await this.request(`/content/${pageId}/child/attachment`);
+    return {
+      results: data.results?.map(att => ({
+        id: att.id,
+        title: att.title,
+        version: att.version?.number,
+        downloadUrl: att._links?.download
+      })) || []
+    };
+  }
+
+  /**
+   * Delete an attachment
+   *
+   * @param {string} attachmentId - The attachment ID to delete
+   */
+  async deleteAttachment(attachmentId) {
+    await this.request(`/content/${attachmentId}`, {
+      method: 'DELETE'
+    });
+    return { success: true, id: attachmentId };
+  }
+
+  /**
    * Upload an attachment to a page
    *
    * @param {string} pageId - The page ID to attach to
@@ -559,5 +588,43 @@ export class ConfluenceClient {
       downloadUrl: data.results?.[0]?._links?.download,
       success: true
     };
+  }
+
+  /**
+   * Update or upload an attachment (replaces existing if found)
+   *
+   * Checks if an attachment with the same filename exists on the page.
+   * If it does, deletes it first, then uploads the new version.
+   *
+   * @param {string} pageId - The page ID to attach to
+   * @param {string} filePath - Absolute path to the file to upload
+   * @param {string} comment - Optional comment for the attachment
+   * @param {boolean} dryRun - Preview without uploading
+   */
+  async updateOrUploadAttachment(pageId, filePath, comment = '', dryRun = false) {
+    const fileName = filePath.split('/').pop();
+
+    if (dryRun) {
+      return {
+        dryRun: true,
+        action: 'updateOrUploadAttachment',
+        pageId,
+        filePath,
+        fileName,
+        comment
+      };
+    }
+
+    // Check if attachment exists
+    const attachments = await this.getAttachments(pageId);
+    const existing = attachments.results.find(att => att.title === fileName);
+
+    // Delete existing attachment if found
+    if (existing) {
+      await this.deleteAttachment(existing.id);
+    }
+
+    // Upload new version
+    return await this.uploadAttachment(pageId, filePath, comment, false);
   }
 }
