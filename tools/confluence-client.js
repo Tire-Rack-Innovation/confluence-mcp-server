@@ -333,18 +333,31 @@ export class ConfluenceClient {
 
   /**
    * Update a page
+   *
+   * IMPORTANT: Confluence API requires the 'title' field on ALL update requests,
+   * even if you're only updating the body. This method automatically includes
+   * the current title if a new one is not provided.
+   *
+   * @param {string} pageId - The page ID to update
+   * @param {Object} updates - Updates to apply
+   * @param {string} [updates.title] - New title (optional, uses current if not provided)
+   * @param {string} [updates.body] - New body content (optional)
+   * @param {boolean} dryRun - Preview changes without updating
    */
   async updatePage(pageId, updates = {}, dryRun = false) {
-    // Get current version first
-    const current = await this.getPage(pageId, 'version');
+    // Get current page to fetch version and title
+    // We MUST fetch the title because Confluence requires it in the payload
+    const current = await this.getPage(pageId, 'version,body.storage');
     const nextVersion = current.version + 1;
 
     const payload = {
       version: { number: nextVersion },
-      type: 'page'
+      type: 'page',
+      // CRITICAL: Confluence requires title on update, use current if not provided
+      // Without this, updates will fail with "Could not update Content" error
+      title: updates.title || current.title
     };
 
-    if (updates.title) payload.title = updates.title;
     if (updates.body) {
       payload.body = {
         storage: {

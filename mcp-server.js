@@ -290,7 +290,7 @@ const TOOLS = [
     },
     {
       name: 'confluence_update_page',
-      description: 'Update an existing Confluence page',
+      description: 'Update an existing Confluence page. You can update the body, title, or both. The current title is preserved automatically if not provided (Confluence API requires title field on all updates).',
       inputSchema: {
         type: 'object',
         properties: {
@@ -300,11 +300,11 @@ const TOOLS = [
           },
           title: {
             type: 'string',
-            description: 'New title (optional)'
+            description: 'New title (optional - current title is used if not provided)'
           },
           body: {
             type: 'string',
-            description: 'New body content (optional)'
+            description: 'New body content in Confluence storage format (optional)'
           },
           dryRun: {
             type: 'boolean',
